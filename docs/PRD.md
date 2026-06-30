@@ -4,6 +4,9 @@
 تطبيق فلتر لتوصيل الطلبات مع فواتير للمتاجر، يستخدم Supabase كقاعدة بيانات خلفية،
 مع ماسح باركود QR ومزامنة لحظية.
 
+## 1.1 المستودع
+- **GitHub**: https://github.com/adhamibrahem052/wasally_driver
+
 ## 2. الميزات الأساسية
 
 ### 2.1 المصادقة
@@ -57,30 +60,43 @@
 ## 3. المعمارية
 
 ### 3.1 التقنيات
-- Flutter 3.44 (Dart SDK)
+- Flutter 3.44 (Dart SDK, Dart 3.12)
 - Supabase (Database, Auth, Realtime, Storage)
-- GetX (State Management, Routing)
-- flutter_map (OpenStreetMap)
+- Riverpod 2.x (flutter_riverpod — State Management)
+- GoRouter 14.x (Routing مع redirect-based auth)
+- flutter_map + latlong2 (OpenStreetMap)
 - mobile_scanner (QR/Barcode)
 - flutter_local_notifications
 - geolocator
-- sqflite (local cache)
+- flutter_native_splash
+- cached_network_image + shimmer
 - connectivity_plus
 - app_links (deep links)
+- mocktail (unit testing)
+- url_launcher + http
 
 ### 3.2 بنية المجلدات
 ```
 lib/
-  app/               # تكوين التطبيق (السمات، التوجيه، الربط)
-  core/              # الأساسيات (الألوان، الثوابت، الأدوات، الشبكة)
-  features/          # الميزات (auth, orders, invoices, collection)
-  shared/            # مشترك (الخدمات، القطعة المشتركة)
+  main.dart          # نقطة الدخول + boot sequence مع AnimatedSwitcher
+  driver/            # ميزات السائق
+    providers/       # Riverpod providers (auth, orders, router)
+    screens/         # شاشات التطبيق
+  shared/            # مشترك
+    localization/    # الترجمة AR/EN (374 keys)
+    models/          # Model classes (Order, Invoice, Store...)
+    providers/       # Shared providers (SupabaseClient, locale, theme)
+    services/        # Service classes (OrderService, InvoiceService...)
+    theme/           # Material 3 themes (light + dark)
+    widgets/         # Widgets مشتركة
 ```
 
 ### 3.3 حالة التطبيق
-- GetX Controllers لكل feature
-- Service classes للتواصل مع Supabase
-- Repositories للبيانات المحلية
+- Riverpod 2.x providers (StreamProvider, FutureProvider, StateNotifierProvider, Provider)
+- StreamProvider للـ realtime data من Supabase (لا يستخدم autoDispose)
+- StateNotifierProvider لإدارة حالة Auth
+- Service classes للتواصل مع Supabase (تستقبل SupabaseClient في constructor)
+- GoRouter redirect للتحكم في التنقل (لا manual context.go بعد auth)
 
 ## 4. الصفحات
 
@@ -121,7 +137,11 @@ lib/
 - اللابتوب: Linux Mint 22.3
 - اتصال إنترنت بطيء (~200 KB/s)
 
-### 6.2 SDK والمكتبات
+### 6.2 الحزمة
+- **Android package name**: `com.wasally.driver`
+- **Dart package name**: `wasally_driver`
+
+### 6.3 SDK والمكتبات
 - compileSdk = 36 (platform stub)
 - minSdk = 24, targetSdk = 36
 - AGP 9.0.1
@@ -133,7 +153,7 @@ lib/
 - build-tools 36.0.0 (نسخة من build-tools 34.0.0)
 - JDK 17 (`JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64`)
 
-### 6.3 المتغيرات البيئية
+### 6.4 المتغيرات البيئية
 ```
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ANDROID_HOME=~/Android/Sdk

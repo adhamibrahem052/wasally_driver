@@ -50,3 +50,5 @@ logs.txt
 
 # Downloaded installer
 *.deb
+
+testsprite_tests/tmp/config.json

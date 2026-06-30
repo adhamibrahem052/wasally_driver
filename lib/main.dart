@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,7 +58,9 @@ class _SplashAppState extends State<_SplashApp> with SingleTickerProviderStateMi
     _setProgress(0.30);
     try {
       await LocalNotificationService.init();
-    } catch (_) {}
+    } catch (e) {
+      developer.log('LocalNotificationService.init failed: $e', name: 'WASALLY_MAIN');
+    }
     _setProgress(0.50);
     _prefs = await SharedPreferences.getInstance();
     _setProgress(0.70);

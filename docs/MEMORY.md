@@ -1,8 +1,11 @@
 # ملف الذاكرة (Memory/Context)
 
 ## معلومات المشروع
-- **اسم المشروع**: wasally_driver (تطبيق وصلى)
+- **اسم المشروع**: wasally_driver (تطبيق وصلى — Wasally Driver)
+- **الحزمة (package)**: `com.wasally.driver`
 - **المسار**: `/home/mazikaa/Desktop/wasally_user/wasally_driver`
+- **GitHub**: `https://github.com/adhamibrahem052/wasally_driver`
+- **Supabase Project**: `oyrexsyebgplfretcvko`
 - **Flutter SDK**: `/home/mazikaa/Desktop/wasally_user/flutter` (3.44.0 stable)
 - **JAVA_HOME**: `/usr/lib/jvm/java-17-openjdk-amd64` (JDK 17)
 - **ANDROID_HOME**: `~/Android/Sdk`
@@ -11,8 +14,9 @@
 - **الجهاز**: Huawei JKM-LX1 (P Smart 2019)
 - **Android**: 9 API 28
 - **المعمارية**: arm64-v8a
-- **الشبكة**: 192.168.11.67 (WiFi)
+- **الشبكة**: 192.168.11.65 (WiFi)
 - **ADB**: لاسلكي على port 5555
+- **ADB ID**: `DEFNW18930010022`
 
 ## إعدادات SDK الخاصة
 
@@ -53,20 +57,44 @@
 - `path_provider_android-2.3.1` → 2.3.0 (تجنب مشكلة jni)
 
 ## APK
-- **آخر بناء**: app-arm64-v8a-debug.apk (95MB)
+- **آخر بناء**: app-arm64-v8a-debug.apk
 - **المسار**: `build/app/outputs/flutter-apk/app-arm64-v8a-debug.apk`
 - **الـ native libs**: مضمنة (بعد إصلاح llvm-strip)
 - **الأيقونة**: حمراء بحرف "و" أبيض
 - **أيقونة الإشعارات**: بيضاء على شفاف
 
+## المعمارية
+- **State Management**: Riverpod 2.x (flutter_riverpod)
+- **Routing**: GoRouter (redirect-based auth)
+- **Backend**: Supabase (Auth, Database, Realtime, Storage)
+- **Localization**: Custom AppLocalizations (374 keys, AR/EN)
+- **Maps**: flutter_map (OpenStreetMap) + latlong2 + geolocator
+
+## قواعد Riverpod الأساسية
+- `driverOrdersProvider` هو `StreamProvider` غير `autoDispose`
+- ممنوع استخدام `ref.invalidate()` أو `ref.refresh()` على أي StreamProvider
+- الـ realtime subscription توصل التحديثات تلقائياً
+- استخدام `ref.read(supabaseClientProvider)` بدلاً من `Supabase.instance.client`
+
+## آخر التغييرات (2026-06-30)
+- **Package rename**: `com.wasally.wasally_driver` → `com.wasally.driver`
+- **إصلاحات State Sync**:
+  - إزالة `ref.invalidate()`/`ref.refresh()` على `driverOrdersProvider` من 3 شاشات
+  - `SplashScreen` — إزالة `context.go(RoutePaths.login)` (pass-through)
+  - GoRouter redirect يتحكم في التنقل بعد auth
+  - إضافة checkpoint `Supabase.instance.client.auth.currentSession` في boot
+  - إضافة `onAuthStateChange` listener في `DriverAuthNotifier`
+- **Password policy**: 8 أحرف + رقم واحد على الأقل
+- **ADB Telemetry**: إضافة developer.log() مع tag `WASALLY_SYNC` في 4 ملفات
+
 ## Crash History
-1. ~~Could not find 'libflutter.so'~~ ✅ (تم الإصلاح - strip tool كان exit 0)
+1. ~~Could not find 'libflutter.so'~~ ✅ (تم الإصلاح — strip tool كان exit 0)
 2. ~~MissingLibraryException for libflutter.so~~ ✅
 
 ## كلمات المرور
 - **تطبيق**: wasallydriver149
-- **Supabase anon key**: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zdGZ3dHF3bm55ZnBhcXp4aG1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3OTM1ODcsImV4cCI6MjA2MjM2OTU4N30.VAkZJZ3ydwDgpFGK7y9ldCckGQaE5qVxzRFQP8H8OeY
-- **Supabase URL**: https://ostfwtqwnnyfpaqzxhmj.supabase.co
+- **Supabase anon key**: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95cmV4c3llYmdwbGZyZXRjdmtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTIyMzAsImV4cCI6MjA5NTgyODIzMH0.-qOC-QW8vP0mjP5aEAP8dzQLkOeQbO-84q0kma0L5RA
+- **Supabase URL**: https://oyrexsyebgplfretcvko.supabase.co
 
 ## الأوامر المهمة
 ```bash
@@ -74,8 +102,10 @@
 flutter build apk --debug --split-per-abi
 
 # ADB
-adb connect 192.168.11.67:5555
-adb install app-arm64-v8a-debug.apk
+adb connect 192.168.11.65:5555
+adb -s DEFNW18930010022 install build/app/outputs/flutter-apk/app-arm64-v8a-debug.apk
+adb -s DEFNW18930010022 uninstall com.wasally.driver
+adb logcat -s WASALLY_SYNC
 adb logcat -s flutter:* AndroidRuntime:* "*:F"
 
 # Gradle مباشر
@@ -86,6 +116,6 @@ flutter run --debug
 ```
 
 ## ملاحظات
-- اتصال الإنترنت بطيء جداً (~200 KB/s) - نتجنب تحميل حزم كبيرة
+- اتصال الإنترنت بطيء جداً (~200 KB/s) — نتجنب تحميل حزم كبيرة
 - Java 21 JRE مثبت لكن JDK 17 يستخدم للبناء
-- flutter build يتجاهل JAVA_HOME أحياناً - نضبط المتغيرات قبل كل build
+- `flutter clean` يمسح Gradle cache — يتجنبه إلا للضرورة

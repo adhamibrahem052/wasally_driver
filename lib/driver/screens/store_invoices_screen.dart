@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../shared/models/store_models.dart';
+import '../../shared/providers/supabase_client_provider.dart';
 import '../../shared/localization/app_localizations.dart';
 import '../../shared/providers/locale_provider.dart';
 import '../../shared/widgets/common_widgets.dart';
@@ -159,7 +159,7 @@ class _DriverStoreInvoicesScreenState extends ConsumerState<DriverStoreInvoicesS
                 try {
                   final user = ref.read(driverAuthProvider).supabaseUser;
                   if (user == null) throw Exception('يجب تسجيل الدخول');
-                  await Supabase.instance.client.from('driver_store_invoices').insert({
+                  await ref.read(supabaseClientProvider).from('driver_store_invoices').insert({
                     'driver_id': user.id,
                     'store_id': store.id,
                     'total_amount': amount,

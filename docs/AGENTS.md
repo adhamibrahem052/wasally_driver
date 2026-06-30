@@ -1,28 +1,33 @@
-# تعليمات للـ AI Agent
+# Wasally Driver — AI Coding Rules
 
-## قبل البدء بأي مهمة
-1. اقرأ MEMORY.md أولاً لفهم السياق
-2. اقرأ PLAN.md لمعرفة المرحلة الحالية
-3. اقرأ TASKS.md لمعرفة المهام المنجزة والمفتوحة
+## المشروع
+تطبيق سائق Flutter يستخدم Riverpod + Supabase + GoRouter.
+Supabase Project: oyrexsyebgplfretcvko
 
-## البيئة
-- **OS**: Linux Mint 22.3
-- **Shell**: bash
-- **JAVA_HOME**: `/usr/lib/jvm/java-17-openjdk-amd64`
-- **ANDROID_HOME**: `~/Android/Sdk`
-- **Flutter**: `/home/mazikaa/Desktop/wasally_user/flutter`
-- **مسار المشروع**: `/home/mazikaa/Desktop/wasally_user/wasally_driver`
+## ⚠️ قاعدة العقد المشترك
+الجداول التالية يكتب عليها تطبيق آخر (Customer App) أيضاً:
+- orders — العميل يقرأ منه ويتابع حالته في real-time
+- notifications — العميل يستقبل منه إشعارات
+- complaints / messages — chat مشترك بين السائق والعميل
 
-## الأوامر الأساسية
-```
-flutter build apk --debug --split-per-abi
-flutter run --debug
-adb connect 192.168.11.67:5555
-adb logcat -s flutter:* AndroidRuntime:* "*:F"
-```
+قبل أي تعديل على هذه الجداول أو RLS policies الخاصة بها:
+قل لي "هذا التعديل سيأثر على Customer App أيضاً" وانتظر موافقتي.
 
-## ملاحظات مهمة
-- دائماً أضبط JAVA_HOME و ANDROID_HOME قبل تشغيل flutter أو gradle
-- `android.ndk.suppressMinSdkVersionError=34` في gradle.properties
-- لا تحاول تحديث الـ Gradle wrapper أو تغيير إصدار AGP
-- لا تحاول تحميل NDK كامل أو SDK packages
+## قواعد Riverpod (لا تكسرها أبداً)
+- لا تستخدم ref.invalidate() أو ref.refresh() على driverOrdersProvider
+- driverOrdersProvider هو StreamProvider غير autoDispose — الـ realtime 
+  يوصّل التحديثات تلقائياً، لا تقطع الاتصال
+- أي provider جديد للـ stream: لا تضف autoDispose إلا لو الشاشة بتتدمر
+
+## قواعد SupabaseClient
+- لا تستخدم Supabase.instance.client مباشرة في أي ملف
+- استخدم دائماً: ref.read(supabaseClientProvider)
+- كل service جديد يأخذ SupabaseClient في الـ constructor
+
+## قواعد Navigation
+- لا تكتب context.go() أو context.push() بعد أي auth mutation
+- GoRouter redirect في router_provider.dart يتحكم في كل التنقل
+
+## قبل كتابة أي provider جديد
+ابحث أولاً في lib/driver/providers/ و lib/shared/providers/
+إذا وجدت provider مشابه — أعد استخدامه، لا تنشئ نسخة جديدة

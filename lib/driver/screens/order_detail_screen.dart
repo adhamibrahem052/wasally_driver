@@ -7,7 +7,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -29,7 +28,8 @@ final detailOrderProvider = FutureProvider.family.autoDispose<OrderModel?, Strin
 final _detailOrderServiceProvider = Provider.autoDispose<OrderService>((ref) => OrderService(ref.read(supabaseClientProvider)));
 final _detailCustomerProvider = FutureProvider.family.autoDispose<AppUser?, String>((ref, id) async {
   if (id.isEmpty) return null;
-  final res = await Supabase.instance.client.from('profiles').select().eq('id', id).single();
+  final supabase = ref.read(supabaseClientProvider);
+  final res = await supabase.from('profiles').select().eq('id', id).single();
   return AppUser.fromMap(res);
 });
 final detailInvoiceProvider = FutureProvider.family.autoDispose<InvoiceModel?, String>((ref, orderId) async {
@@ -39,7 +39,7 @@ final _detailInvoiceServiceProvider = Provider.autoDispose<InvoiceService>((ref)
 
 final _detailDriverLocationProvider = StreamProvider.family.autoDispose<LatLng?, String>((ref, driverId) {
   if (driverId.isEmpty) return const Stream.empty();
-  return Supabase.instance.client
+  return ref.read(supabaseClientProvider)
       .from('driver_locations')
       .stream(primaryKey: ['driver_id'])
       .eq('driver_id', driverId)
@@ -73,12 +73,13 @@ class _DriverOrderDetailScreenState extends ConsumerState<DriverOrderDetailScree
   @override
   void initState() {
     super.initState();
-    _orderRealtimeSub = Supabase.instance.client
+    final supabase = ref.read(supabaseClientProvider);
+    _orderRealtimeSub = supabase
         .from('orders')
         .stream(primaryKey: ['id'])
         .eq('id', widget.orderId)
         .listen((_) => ref.invalidate(detailOrderProvider(widget.orderId)));
-    _invoiceRealtimeSub = Supabase.instance.client
+    _invoiceRealtimeSub = supabase
         .from('invoices')
         .stream(primaryKey: ['id'])
         .eq('order_id', widget.orderId)
@@ -132,7 +133,7 @@ class _DriverOrderDetailScreenState extends ConsumerState<DriverOrderDetailScree
     const locSettings = LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10);
     _locationSubscription = Geolocator.getPositionStream(locationSettings: locSettings).listen((pos) async {
       try {
-        await Supabase.instance.client.from('driver_locations').upsert({
+        await ref.read(supabaseClientProvider).from('driver_locations').upsert({
           'driver_id': ref.read(driverAuthProvider).supabaseUser!.id,
           'lat': pos.latitude,
           'lng': pos.longitude,

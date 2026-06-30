@@ -8,13 +8,15 @@ import '../../shared/models/user_model.dart';
 import '../../shared/widgets/common_widgets.dart';
 import '../../shared/localization/app_localizations.dart';
 import '../../shared/providers/locale_provider.dart';
+import '../../shared/providers/supabase_client_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/driver_providers.dart';
 
 final _editProfileProvider = FutureProvider<AppUser?>((ref) async {
   final user = ref.read(driverAuthProvider).supabaseUser;
   if (user == null) return null;
-  final res = await Supabase.instance.client.from('profiles').select().eq('id', user.id).single();
+  final supabase = ref.read(supabaseClientProvider);
+  final res = await supabase.from('profiles').select().eq('id', user.id).single();
   return AppUser.fromMap(res);
 });
 
@@ -62,8 +64,12 @@ class _DriverEditProfileScreenState extends ConsumerState<DriverEditProfileScree
     final confirmPassword = _confirmPasswordCtrl.text.trim();
 
     if (newPassword.isNotEmpty || confirmPassword.isNotEmpty) {
-      if (newPassword.length < 6) {
+      if (newPassword.length < 8) {
         if (mounted) showErrorDialog(context, tr('passwordMinLength'));
+        return;
+      }
+      if (!RegExp(r'[0-9]').hasMatch(newPassword)) {
+        if (mounted) showErrorDialog(context, tr('passwordNumberRequired'));
         return;
       }
       if (newPassword != confirmPassword) {
@@ -78,10 +84,12 @@ class _DriverEditProfileScreenState extends ConsumerState<DriverEditProfileScree
       if (_avatarFile != null) {
         final ext = _avatarFile!.path.split('.').last;
         final path = 'avatars/${user.id}.$ext';
-        await Supabase.instance.client.storage.from('profiles').upload(path, _avatarFile!, fileOptions: FileOptions(upsert: true));
-        avatarUrl = Supabase.instance.client.storage.from('profiles').getPublicUrl(path);
+        final supabase = ref.read(supabaseClientProvider);
+        await supabase.storage.from('profiles').upload(path, _avatarFile!, fileOptions: FileOptions(upsert: true));
+        avatarUrl = supabase.storage.from('profiles').getPublicUrl(path);
       }
-      await Supabase.instance.client.from('profiles').update({
+      final supabase = ref.read(supabaseClientProvider);
+      await supabase.from('profiles').update({
         'full_name': _nameCtrl.text.trim(),
         'phone_number': _phoneCtrl.text.trim(),
         'address': _addressCtrl.text.trim(),
@@ -89,7 +97,7 @@ class _DriverEditProfileScreenState extends ConsumerState<DriverEditProfileScree
       }).eq('id', user.id);
 
       if (newPassword.isNotEmpty) {
-        await Supabase.instance.client.auth.updateUser(UserAttributes(password: newPassword));
+        await supabase.auth.updateUser(UserAttributes(password: newPassword));
       }
 
       ref.invalidate(driverProfileProvider);

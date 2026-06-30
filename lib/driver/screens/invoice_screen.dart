@@ -5,7 +5,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../shared/services/order_service.dart';
 import '../../shared/services/invoice_service.dart';
 import '../../shared/models/order_model.dart';
@@ -28,7 +27,8 @@ final _invoiceProvider = FutureProvider.family.autoDispose<InvoiceModel?, String
 });
 final _invoiceStoreProvider = FutureProvider.family.autoDispose<StoreModel?, String>((ref, storeId) async {
   if (storeId.isEmpty) return null;
-  final res = await Supabase.instance.client.from('stores').select().eq('id', storeId).single();
+  final supabase = ref.read(supabaseClientProvider);
+  final res = await supabase.from('stores').select().eq('id', storeId).single();
   return StoreModel.fromMap(res);
 });
 
@@ -57,7 +57,8 @@ class _DriverInvoiceScreenState extends ConsumerState<DriverInvoiceScreen> {
   @override
   void initState() {
     super.initState();
-    _invoiceRealtimeSub = Supabase.instance.client
+    final supabase = ref.read(supabaseClientProvider);
+    _invoiceRealtimeSub = supabase
         .from('invoices')
         .stream(primaryKey: ['id'])
         .eq('order_id', widget.orderId)
@@ -126,7 +127,7 @@ class _DriverInvoiceScreenState extends ConsumerState<DriverInvoiceScreen> {
           'total_price': i.totalPrice,
         }).toList(),
       );
-      await Supabase.instance.client.from('orders').update({'final_total': _grandTotal}).eq('id', widget.orderId);
+      await ref.read(supabaseClientProvider).from('orders').update({'final_total': _grandTotal}).eq('id', widget.orderId);
       ref.invalidate(_invoiceProvider(widget.orderId));
       ref.invalidate(_invoiceOrderProvider(widget.orderId));
       if (mounted) {
@@ -152,9 +153,10 @@ class _DriverInvoiceScreenState extends ConsumerState<DriverInvoiceScreen> {
     setState(() => _saving = true);
     try {
       if (_existingInvoiceId != null) {
-        await Supabase.instance.client.from('invoice_items').delete().eq('invoice_id', _existingInvoiceId!);
+        final supabase = ref.read(supabaseClientProvider);
+        await supabase.from('invoice_items').delete().eq('invoice_id', _existingInvoiceId!);
         for (final item in allItems) {
-          await Supabase.instance.client.from('invoice_items').insert({
+          await supabase.from('invoice_items').insert({
             'invoice_id': _existingInvoiceId,
             'name': item.name,
             'quantity': item.quantity,
@@ -164,12 +166,12 @@ class _DriverInvoiceScreenState extends ConsumerState<DriverInvoiceScreen> {
         }
         final newTotalAmount = allItems.fold<double>(0, (sum, i) => sum + i.totalPrice);
         final newGrandTotal = newTotalAmount + _deliveryFee;
-        await Supabase.instance.client.from('invoices').update({
+        await supabase.from('invoices').update({
           'total_amount': newTotalAmount,
           'delivery_fee': _deliveryFee,
           'grand_total': newGrandTotal,
         }).eq('id', _existingInvoiceId!);
-        await Supabase.instance.client.from('orders').update({
+        await supabase.from('orders').update({
           'final_total': newGrandTotal,
           'delivery_fee': _deliveryFee,
         }).eq('id', widget.orderId);
